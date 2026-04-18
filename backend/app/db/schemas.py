@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from pydantic import BaseModel
 from typing import Optional
 
@@ -16,7 +18,7 @@ class JobPostingCreate(JobPostingBase):
 
 class JobPosting(JobPostingBase):
     id: int
-    date_scraped: Optional[str] = None
+    date_scraped: Optional[datetime] = None
     skills_extracted: Optional[str] = None
     summary: Optional[str] = None
     embedding_id: Optional[str] = None
