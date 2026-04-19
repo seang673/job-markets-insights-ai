@@ -8,6 +8,7 @@ from app.llm.extractor import extract_job_insights
 def process_unprocessed_jobs():
     db: Session = SessionLocal()
 
+    #Recieves raw jobs
     jobs = db.query(models.JobPosting).filter(
         (models.JobPosting.skills_extracted.is_(None)) |
         (models.JobPosting.summary.is_(None))).all()

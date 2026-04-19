@@ -10,7 +10,7 @@ def extract_job_insights(description: str):
 
     Extract the following insights from the job description:
     1. Required skills (technical and soft skills)
-    2. A concise 3-5 sentence summry of the role
+    2. A concise 3-5 sentence summary of the role
 
     Return you answer in JSON format with keys:
     - skills:
@@ -33,6 +33,6 @@ def extract_job_insights(description: str):
     data = response.json()
     content = data["choices"][0]["message"]["content"]
 
-    # Parse the JSON response from the model    
+    # Parse the JSON response from the gpt model
     import json
     return json.loads(content)
