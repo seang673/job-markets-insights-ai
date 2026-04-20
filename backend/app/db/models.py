@@ -20,5 +20,7 @@ class JobPosting(Base):
 
     # LLM‑ready fields (filled later)
     skills_extracted = Column(Text, nullable=True)
+    tech_stack = Column(String, nullable=True)
+    seniority = Column(String, nullable=True)
     summary = Column(Text, nullable=True)
     embedding_id = Column(String(255), nullable=True)
