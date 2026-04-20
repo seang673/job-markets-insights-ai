@@ -1,8 +1,11 @@
 import os
 import requests
+from dotenv import load_dotenv
+
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 MODEL = "gpt-40-mini"
+load_dotenv()
 
 def extract_job_insights(description: str):
     prompt = f"""
@@ -10,11 +13,15 @@ def extract_job_insights(description: str):
 
     Extract the following insights from the job description:
     1. Required skills (technical and soft skills)
-    2. A concise 3-5 sentence summary of the role
+    2. Tech stack (programming languages, frameworks, tools, cloud platforms)
+    3. Seniority level (e.g., Junior, Mid-Level, Senior, Lead, Principal)
+    4. A concise 3-5 sentence summary of the role
 
     Return you answer in JSON format with keys:
     - skills:
     - summary:
+    - seniority:
+    - tech_stack:
 
     Job Description:
     {description}
