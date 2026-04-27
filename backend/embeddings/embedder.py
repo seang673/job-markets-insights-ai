@@ -1,9 +1,10 @@
 import os
 import json
 from typing import List, Dict
-
+from dotenv import load_dotenv
 from openai import AsyncOpenAI
 
+load_dotenv()
 client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 EMBED_MODEL = "text-embedding-3-small"
