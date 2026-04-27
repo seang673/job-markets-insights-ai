@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException
 from sqlalchemy.orm import Session
 
 from app.db.database import SessionLocal
-from db import models
+from app.db import models
 
 from embeddings.embedder import embed_job
 from embeddings.vector_store import query_similar_jobs
