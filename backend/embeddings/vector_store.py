@@ -1,8 +1,12 @@
-from chromadb import Client
+import chromadb
 from chromadb.config import Settings
 
+print("DEBUG SETTINGS:", Settings(
+    chroma_db_impl="duckdb+parquet",
+    persist_directory="vector_store"
+).__dict__)
 #Initialize the ChromaDB client (persistent storage using DuckDB + Parquet)
-client = Client(Settings(chroma_db_impl="duckdb+parquet", persist_directory="vector_store"))
+client = chromadb.Client(Settings(chroma_db_impl="duckdb+parquet", persist_directory="vector_store"))
 
 #Create or load collection
 collection = client.get_or_create_collection(name="jobs", metadata={"hnsw:space": "cosine"})
