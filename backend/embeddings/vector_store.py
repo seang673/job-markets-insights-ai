@@ -1,10 +1,6 @@
 import chromadb
 from chromadb.config import Settings
 
-print("DEBUG SETTINGS:", Settings(
-    chroma_db_impl="duckdb+parquet",
-    persist_directory="vector_store"
-).__dict__)
 #Initialize the ChromaDB client (persistent storage using DuckDB + Parquet)
 client = chromadb.Client(Settings(chroma_db_impl="duckdb+parquet", persist_directory="vector_store"))
 
