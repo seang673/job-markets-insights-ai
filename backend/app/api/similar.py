@@ -16,7 +16,7 @@ async def get_similar_jobs(job_id: int, top_k: int = 5):
     #Fetch the job from the database
     job = db.query(models.JobPosting).filter(models.JobPosting.id == job_id).first()
 
-    #Job not found
+    #If Job not found
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
 
