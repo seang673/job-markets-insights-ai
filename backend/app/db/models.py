@@ -14,6 +14,8 @@ class JobPosting(Base):
     description = Column(Text, nullable=True)
     url = Column(String(500), nullable=True)
     source = Column(String(100), default="indeed")
+    role = Column(String(255), nullable=True)
+
 
     date_posted = Column(String(100), nullable=True)
     date_scraped = Column(DateTime(timezone=True), server_default=func.now())

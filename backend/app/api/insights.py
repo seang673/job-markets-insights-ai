@@ -1,3 +1,5 @@
+from typing import Optional
+
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from collections import Counter
@@ -16,11 +18,14 @@ def get_db():
         db.close()
 
 @router.get("/insights/overview")
-def get_insights_overview(db: Session = Depends(get_db)):
+def get_insights_overview(role: Optional[str] = None, db: Session = Depends(get_db)):
 
     # Fetch all jobs
     jobs = db.query(models.JobPosting).all()
+    if role:
+        query = query.filter(models.JobPosting.role == role)
 
+    jobs = query.all()
     total_jobs = len(jobs)
 
     skill_counter = Counter()
@@ -58,5 +63,6 @@ def get_insights_overview(db: Session = Depends(get_db)):
         "total_jobs": total_jobs,
         "top_skills": top_skills,
         "top_tech_stack": top_tech_stack,
-        "seniority_distribution": seniority_distribution
+        "seniority_distribution": seniority_distribution,
+        "role": role or "all"
     }
