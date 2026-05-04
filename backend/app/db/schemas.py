@@ -12,6 +12,7 @@ class JobPostingBase(BaseModel):
     url: Optional[str] = None
     source: Optional[str] = "indeed"
     date_posted: Optional[str] = None
+    role: Optional[str] = None
 
 class JobPostingCreate(JobPostingBase):
     pass
