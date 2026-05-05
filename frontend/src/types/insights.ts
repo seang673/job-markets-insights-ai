@@ -1,4 +1,4 @@
-#Defining the Types
+/* Defining the Types */
 
 export interface SkillCount {
   name: string;
