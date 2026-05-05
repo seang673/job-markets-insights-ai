@@ -9,4 +9,4 @@ router = APIRouter()
 @router.get("/scrape")
 def scrape_jobs(role: str, db: Session = Depends(get_db)):
     run_ingestion(role)
-    return {"status": "ok", "role": role}
+    return {"status": "scraping_jobs", "role": role}
