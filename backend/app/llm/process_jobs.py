@@ -5,7 +5,7 @@ from app.llm.extractor import extract_job_insights
 
 from embeddings.vector_store import upsert_job_embedding
 from embeddings.embedder import embed_job
-from app.llm.extractor import extract_fields #NOT IMPLEMNTED YET
+
 
 #Add pipeline to update database
 

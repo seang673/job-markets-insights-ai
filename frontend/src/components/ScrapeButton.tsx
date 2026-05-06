@@ -37,3 +37,4 @@ export default function ScrapeButton({ role, onScrapeComplete }: Props) {
             {message && <p className="text-sm text-gray-600 mt-2">{message}</p>}
         </div>
     )
+};
