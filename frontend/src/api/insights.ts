@@ -11,3 +11,4 @@ export async function fetchInsightsOverview(role?: string): Promise<InsightsOver
   }
 
   return res.json();
+}
