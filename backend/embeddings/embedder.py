@@ -2,10 +2,10 @@ import os
 import json
 from typing import List, Dict
 from dotenv import load_dotenv
-from openai import AsyncOpenAI
+import openai
 
 load_dotenv()
-client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+openai.api_key = os.getenv("OPENAI_API_KEY")
 
 EMBED_MODEL = "text-embedding-3-small"
 
@@ -37,7 +37,7 @@ async def embed_job(job: Dict) -> List[float]:
     """
     text = build_embedding(job)
 
-    response = await client.embeddings.create(
+    response = openai.Embedding.create(
         model=EMBED_MODEL,
         input=text
     )
