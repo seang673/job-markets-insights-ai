@@ -43,7 +43,7 @@ async def process_unprocessed_jobs():
                 "skills": job.skills_extracted,
                 "description": job.description
             })
-            
+
             #Store embedding in ChromaDB
             upsert_job_embedding(job_id=str(job.id), embedding=embedding, metadata={
                 "title": job.title,
