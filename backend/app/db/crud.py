@@ -1,8 +1,11 @@
+from select import select
+from unittest import result
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
 from . import models, schemas
 
 #Create a new job posting
-def create_job_posting(db: Session, job: schemas.JobPostingCreate):
+async def create_job_posting(db: Session, job: schemas.JobPostingCreate):
     db_job = models.JobPosting(
         title=job.title,
         company=job.company,
@@ -10,17 +13,24 @@ def create_job_posting(db: Session, job: schemas.JobPostingCreate):
         description=job.description,
         url=job.url,
         source=job.source,
-        date_posted=job.date_posted
+        date_posted=job.date_posted,
+        role=job.role
     )
     db.add(db_job)
-    db.commit()
-    db.refresh(db_job)
+    await db.commit()
+    await db.refresh(db_job)
     return db_job
 
 #Get all job postings with pagination
-def get_job_postings(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(models.JobPosting).offset(skip).limit(limit).all()
+async def get_job_postings(db: AsyncSession, skip: int = 0, limit: int = 100):
+    result = await db.execute(
+        select(models.JobPosting).offset(skip).limit(limit)
+    )
+    return result.scalars().all()
 
 #Get a single job posting by ID
-def get_job_posting(db: Session, job_id: int):
-    return db.query(models.JobPosting).filter(models.JobPosting.id == job_id).first()
+async def get_job_posting(db: AsyncSession, job_id: int):
+    result = await db.execute(
+        select(models.JobPosting).where(models.JobPosting.id == job_id)
+    )
+    return result.scalar_one_or_none()
