@@ -1,31 +1,28 @@
 from typing import Optional
-
 from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 from collections import Counter
 
-from app.db.database import SessionLocal
+from app.db.database import async_get_db
 from app.db import models
-
 router = APIRouter()
 
-# Dependency to get DB session
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
 @router.get("/insights/overview")
-def get_insights_overview(role: Optional[str] = None, db: Session = Depends(get_db)):
+async def get_insights_overview(
+    role: Optional[str] = None,
+    db: AsyncSession = Depends(async_get_db)
+):
+    # Build base query
+    query = select(models.JobPosting)
 
-    # Fetch all jobs
-    jobs = db.query(models.JobPosting).all()
     if role:
-        query = query.filter(models.JobPosting.role == role)
+        query = query.where(models.JobPosting.role == role)
 
-    jobs = query.all()
+    # Execute async query
+    result = await db.execute(query)
+    jobs = result.scalars().all()
+
     total_jobs = len(jobs)
 
     skill_counter = Counter()
@@ -45,12 +42,12 @@ def get_insights_overview(role: Optional[str] = None, db: Session = Depends(get_
             seniority_counter.update([job.seniority.strip()])
 
     top_skills = [
-        {"name":name, "count": count}
+        {"name": name, "count": count}
         for name, count in skill_counter.most_common(20)
     ]
 
     top_tech_stack = [
-        {"name":name, "count": count}
+        {"name": name, "count": count}
         for name, count in tech_counter.most_common(20)
     ]
 

@@ -1,11 +1,11 @@
 from select import select
 from unittest import result
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import Session
+
 from . import models, schemas
 
 #Create a new job posting
-async def create_job_posting(db: Session, job: schemas.JobPostingCreate):
+async def create_job_posting(db: AsyncSession, job: schemas.JobPostingCreate):
     db_job = models.JobPosting(
         title=job.title,
         company=job.company,

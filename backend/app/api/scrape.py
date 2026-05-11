@@ -1,7 +1,6 @@
 
 from fastapi import APIRouter, Depends
 from app.scraping.indeed_scraper import scrape_indeed
-from app.db.crud import Session
 from app.ingestion.ingest_jobs import run_ingestion
 from app.llm.process_jobs import process_unprocessed_jobs
 from sqlalchemy.ext.asyncio import AsyncSession

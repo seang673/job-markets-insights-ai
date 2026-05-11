@@ -1,8 +1,8 @@
 from sqlalchemy.orm import Session
-from app.db.database import SessionLocal
 from app.db import models
 from app.llm.extractor import extract_job_insights
 
+from app.api.insights import Depends
 from embeddings.vector_store import upsert_job_embedding
 from embeddings.embedder import embed_job
 
@@ -10,7 +10,7 @@ from embeddings.embedder import embed_job
 #Add pipeline to update database
 
 async def process_unprocessed_jobs():
-    db: Session = SessionLocal()
+    db: AsyncSession = Depends(async_get_db)
 
     #Recieves raw jobs
     jobs = db.query(models.JobPosting).filter(
