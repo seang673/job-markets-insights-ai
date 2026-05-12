@@ -1,39 +1,45 @@
+from chromadb import db
 from sqlalchemy.orm import Session
 from app.db import models
 from app.llm.extractor import extract_job_insights
 
-from app.api.insights import Depends
+from app.api.insights import Depends, select
+from app.db.database import AsyncSession
 from embeddings.vector_store import upsert_job_embedding
 from embeddings.embedder import embed_job
 
 
 #Add pipeline to update database
 
-async def process_unprocessed_jobs():
-    db: AsyncSession = Depends(async_get_db)
+async def process_unprocessed_jobs(db: AsyncSession):
 
     #Recieves raw jobs
-    jobs = db.query(models.JobPosting).filter(
-        (models.JobPosting.skills_extracted.is_(None)) |
-        (models.JobPosting.summary.is_(None)) |
-        (models.JobPosting.tech_stack.is_(None)) |
-        (models.JobPosting.seniority.is_(None))).all()
+    result = await db.execute(
+        select(models.JobPosting).where(
+            (models.JobPosting.skills_extracted.is_(None)) |
+            (models.JobPosting.summary.is_(None)) |
+            (models.JobPosting.tech_stack.is_(None)) |
+            (models.JobPosting.seniority.is_(None))
+        )
+    )
 
+    jobs = result.scalars().all()
     print(f"Found {len(jobs)} unprocessed jobs.")
 
     for job in jobs:
         if not job.description:
             continue
-        try:
 
-            #LLM extraction
-            insights = extract_job_insights(job.description)
+        try:
+            # LLM extraction (async)
+            insights = await extract_job_insights(job.description)
 
             job.skills_extracted = ", ".join(insights["skills"])
             job.summary = insights["summary"]
             job.seniority = insights["seniority"]
             job.tech_stack = ", ".join(insights["tech_stack"])
 
+            # Embedding (async)
             embedding = await embed_job({
                 "title": job.title,
                 "company": job.company,
@@ -44,22 +50,26 @@ async def process_unprocessed_jobs():
                 "description": job.description
             })
 
-            #Store embedding in ChromaDB
-            upsert_job_embedding(job_id=str(job.id), embedding=embedding, metadata={
-                "title": job.title,
-                "company": job.company,
-                "location": job.location,
-                "url": job.url
-            })
+            # Store embedding in ChromaDB
+            upsert_job_embedding(
+                job_id=str(job.id),
+                embedding=embedding,
+                metadata={
+                    "title": job.title,
+                    "company": job.company,
+                    "location": job.location,
+                    "url": job.url
+                }
+            )
 
+            # Persist updates
             db.add(job)
-            db.commit()
+            await db.commit()
 
             print(f"Processed job {job.id}: {job.title}")
 
         except Exception as e:
             print(f"Error processing job {job.id}: {e}")
-    db.close()
 
 if __name__ == "__main__":
     import asyncio
