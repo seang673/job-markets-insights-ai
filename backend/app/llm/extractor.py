@@ -7,7 +7,7 @@ load_dotenv()
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 MODEL = "gpt-40-mini"
 
-def extract_job_insights(description: str):
+async def extract_job_insights(description: str):
     prompt = f"""
     You are an AI that analyzes job postings.
 
