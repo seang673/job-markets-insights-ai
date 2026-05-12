@@ -1,15 +1,15 @@
 import asyncio
 import requests
-from app.scraping.indeed_scraper import scrape_indeed
+from app.scraping.linkedin_scraper import scrape_linkedin
 from app.db.crud import AsyncSession, create_job_posting
 from app.db.schemas import JobPostingCreate
-from sqlalchemy.orm import Session
+
 
 #FastAPI POST route for ingesting scraped jobs into the database
 API_URL = "http://localhost:8000/api/jobs"
 
 async def run_ingestion(role_query: str, db: AsyncSession):
-    jobs = await scrape_indeed(role_query) #Run the scraper
+    jobs = await scrape_linkedin(role_query) #Run the scraper
     print("Scraped jobs:", len(jobs))
     for job in jobs:
         job_data = JobPostingCreate(
