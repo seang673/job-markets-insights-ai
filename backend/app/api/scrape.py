@@ -10,6 +10,7 @@ router = APIRouter()
 
 @router.post("/scrape")
 async def scrape_jobs(role: str, db: AsyncSession = Depends(async_get_db)):
+    role = role.strip()
     await run_ingestion(role, db)
     await process_unprocessed_jobs(db)
     return {"status": "scraping_jobs", "role": role}

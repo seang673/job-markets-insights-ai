@@ -10,7 +10,7 @@ API_URL = "http://localhost:8000/api/jobs"
 
 async def run_ingestion(role_query: str, db: AsyncSession):
     jobs = await scrape_indeed(role_query) #Run the scraper
-
+    print("Scraped jobs:", len(jobs))
     for job in jobs:
         job_data = JobPostingCreate(
             title=job["title"],
