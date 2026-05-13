@@ -9,10 +9,7 @@ from app.db import models
 router = APIRouter()
 
 @router.get("/insights/overview")
-async def get_insights_overview(
-    role: Optional[str] = None,
-    db: AsyncSession = Depends(async_get_db)
-):
+async def get_insights_overview(role: Optional[str] = None, db: AsyncSession = Depends(async_get_db)):
     # Build base query
     query = select(models.JobPosting)
 
