@@ -1,11 +1,12 @@
 import os
 import json
 from dotenv import load_dotenv
-from openai import AsyncOpenAI
+import openai
+
+openai.api_key = os.getenv("OPENAI_API_KEY")
 
 load_dotenv()
 
-client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 MODEL = "gpt-4o-mini"
 
 system_prompt = """
@@ -22,7 +23,7 @@ Respond ONLY with valid JSON in this exact format:
 
 async def extract_job_insights(description: str):
     try:
-        response = await client.chat.completions.create(
+        response = openai.ChatCompletion.create(
             model=MODEL,
             messages=[
                 {"role": "system", "content": system_prompt},

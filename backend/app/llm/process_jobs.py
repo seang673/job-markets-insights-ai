@@ -14,7 +14,7 @@ from embeddings.embedder import embed_job
 
 async def process_unprocessed_jobs(db: AsyncSession):
 
-    #Recieves raw jobs
+    #Recieves raw jobs that are unprocessed
     result = await db.execute(
          select(models.JobPosting).where(
             or_(
@@ -44,7 +44,7 @@ async def process_unprocessed_jobs(db: AsyncSession):
             continue
 
         try:
-            # LLM extraction (async)
+            # LLM extraction of insights from job
             print("Extracting insights for job:", job.id)
             insights = await extract_job_insights(job.description)
             job.skills_extracted = ", ".join(insights["skills"])
@@ -53,7 +53,7 @@ async def process_unprocessed_jobs(db: AsyncSession):
             job.tech_stack = ", ".join(insights["tech_stack"])
 
 
-            # Embedding (async)
+            # Embedding generation for job
             embedding = await embed_job({
                 "title": job.title,
                 "company": job.company,
@@ -64,7 +64,7 @@ async def process_unprocessed_jobs(db: AsyncSession):
                 "description": job.description
             })
 
-            # Store embedding in ChromaDB
+            # Stores embedding as vector in ChromaDB
             upsert_job_embedding(
                 job_id=str(job.id),
                 embedding=embedding,
@@ -76,7 +76,7 @@ async def process_unprocessed_jobs(db: AsyncSession):
                 }
             )
 
-            # Persist updates
+            # Persist updates to database
             db.add(job)
             await db.commit()
 
