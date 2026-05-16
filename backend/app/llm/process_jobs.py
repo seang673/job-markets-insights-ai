@@ -2,6 +2,7 @@ from chromadb import db
 from sqlalchemy.orm import Session
 from app.db import models
 from app.llm.extractor import extract_job_insights
+from sqlalchemy import or_
 
 from app.api.insights import Depends, select
 from app.db.database import AsyncSession
@@ -15,11 +16,17 @@ async def process_unprocessed_jobs(db: AsyncSession):
 
     #Recieves raw jobs
     result = await db.execute(
-        select(models.JobPosting).where(
-            (models.JobPosting.skills_extracted.is_(None)) |
-            (models.JobPosting.summary.is_(None)) |
-            (models.JobPosting.tech_stack.is_(None)) |
-            (models.JobPosting.seniority.is_(None))
+         select(models.JobPosting).where(
+            or_(
+                models.JobPosting.skills_extracted.is_(None),
+                models.JobPosting.skills_extracted == "",
+                models.JobPosting.summary.is_(None),
+                models.JobPosting.summary == "",
+                models.JobPosting.tech_stack.is_(None),
+                models.JobPosting.tech_stack == "",
+                models.JobPosting.seniority.is_(None),
+                models.JobPosting.seniority == ""
+            )
         )
     )
 
@@ -28,16 +35,23 @@ async def process_unprocessed_jobs(db: AsyncSession):
 
     for job in jobs:
         if not job.description:
+            print(f"Job {job.id} has no description — marking as processed anyway.")
+            job.skills_extracted = ""
+            job.summary = ""
+            job.seniority = ""
+            job.tech_stack = ""
+            await db.commit()
             continue
 
         try:
             # LLM extraction (async)
+            print("Extracting insights for job:", job.id)
             insights = await extract_job_insights(job.description)
-
             job.skills_extracted = ", ".join(insights["skills"])
             job.summary = insights["summary"]
             job.seniority = insights["seniority"]
             job.tech_stack = ", ".join(insights["tech_stack"])
+
 
             # Embedding (async)
             embedding = await embed_job({
