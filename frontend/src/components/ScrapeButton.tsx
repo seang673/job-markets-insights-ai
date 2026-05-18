@@ -18,6 +18,7 @@ export default function ScrapeButton({ role, onScrapeComplete }: Props) {
             await scrapeJobs(role);
             setMessage("Scraping has started, please wait a moment!");
             onScrapeComplete();
+            setMessage("Role scraping complete!");
         } catch (error) {
             setMessage("Failed to initiate scraping.");
         } finally {

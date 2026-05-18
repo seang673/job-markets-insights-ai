@@ -11,8 +11,14 @@ export default function Dashboard() {
     const [selectedRole, setSelectedRole] = useState("Software Engineer");
 
     useEffect(() => {
+        setLoading(true);
         fetchInsightsOverview(selectedRole).then((res) => {
             setData(res);
+        })
+        .catch((error) => {
+            console.error("Failed to load insights:", error);
+        })
+        .finally(() => {
             setLoading(false);
         });
     }, [selectedRole]);
@@ -33,7 +39,7 @@ export default function Dashboard() {
             {!loading && data && (
                 <>
                 <p className="text-gray-600 mb-6">
-                    Total Jobs: {data.total_jobs} 
+                    Total Jobs: {data.total_jobs}
                     <span className="ml-2 text-indigo-600 font-medium">
                     ({data.role})
                     </span>
