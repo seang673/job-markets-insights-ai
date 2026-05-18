@@ -14,11 +14,42 @@ You are an AI system that extracts structured insights from job descriptions.
 Respond ONLY with valid JSON in this exact format:
 
 {
-    "skills": [...],
-    "tech_stack": [...],
-    "seniority": "Junior | Mid-Level | Senior | Lead | Principal | Unknown",
-    "summary": "3-5 sentence summary"
+  "tech_stack": [],
+  "skills": [],
+  "seniority": "",
+  "summary": ""
 }
+
+Rules for extraction:
+
+1. "tech_stack" MUST include ONLY concrete technologies:
+   - Programming languages (Python, Java, C++, TypeScript)
+   - Frameworks (React, Django, Spring Boot, FastAPI)
+   - Libraries (NumPy, Pandas, TensorFlow, PyTorch)
+   - Databases (PostgreSQL, MongoDB, Redis)
+   - Cloud platforms (AWS, Azure, GCP)
+   - DevOps tools (Docker, Kubernetes, Terraform, Jenkins)
+   - Other specific tools (Git, Linux, Kafka, Spark)
+
+   DO NOT include soft skills, general abilities, or abstract concepts.
+   If no technologies are mentioned, return an empty array.
+
+2. "skills" should include broader competencies and abilities mentioned in the job description, such as:
+   - Soft skills (communication, teamwork, leadership)
+   - General abilities
+   - Methodologies (Agile, Scrum, CI/CD)
+   - Domain knowledge (machine learning, data analysis)
+   - Certifications (if mentioned)
+
+   DO NOT include programming languages, frameworks, tools, or cloud platforms.
+   If none are mentioned, return an empty array.
+
+3. "seniority" must be one of:
+   "Junior", "Mid-Level", "Senior", "Lead", "Principal", or "Unknown".
+
+4. "summary" must be a concise 3 to 5 sentence summary of the role.
+
+Return ONLY valid JSON. No explanations.
 """
 
 async def extract_job_insights(description: str):
