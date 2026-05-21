@@ -40,12 +40,12 @@ async def get_insights_overview(role: Optional[str] = None, db: AsyncSession = D
 
     top_skills = [
         {"name": name, "count": count}
-        for name, count in skill_counter.most_common(20)
+        for name, count in skill_counter.most_common(10)
     ]
 
     top_tech_stack = [
         {"name": name, "count": count}
-        for name, count in tech_counter.most_common(20)
+        for name, count in tech_counter.most_common(10)
     ]
 
     seniority_distribution = [

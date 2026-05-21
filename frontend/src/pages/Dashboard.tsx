@@ -25,28 +25,42 @@ export default function Dashboard() {
 
 
     return (
-        <div className="p-6">
-            <h1 className="text-3xl font-bold mb-4">Job Market Insights</h1>
-            <RoleSelector selectedRole={selectedRole} onRoleChange={setSelectedRole} />
+    <div className="min-h-screen bg-gray-50 p-6 space-y-6">
 
-            <ScrapeButton role={selectedRole} onScrapeComplete={() => {
-                //refresh insights after scraping begins
-                fetchInsightsOverview(selectedRole).then((res) => {
-                    setData(res);
-                });
-            }} />
-            {loading && <div>Loading insights...</div>}
-            {!loading && data && (
-                <>
-                <p className="text-gray-600 mb-6">
-                    Total Jobs: {data.total_jobs}
-                    <span className="ml-2 text-indigo-600 font-medium">
-                    ({data.role})
-                    </span>
-                </p>
-                    <DashboardGrid data={data} />
-                </>
-            )}
+        {/* Header bar */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <h1 className="text-3xl font-bold text-gray-900">Job Market Insights</h1>
+            <div className="flex items-center gap-3">
+                <RoleSelector selectedRole={selectedRole} onRoleChange={setSelectedRole} />
+                <ScrapeButton
+                    role={selectedRole}
+                    onScrapeComplete={() => {
+                        fetchInsightsOverview(selectedRole).then((res) => setData(res));
+                    }}
+                />
+            </div>
         </div>
+
+        {/* Stat strip */}
+        {!loading && data && (
+            <div className="flex items-center gap-2 text-sm">
+                <span className="text-gray-500">Total jobs:</span>
+                <span className="font-semibold text-gray-800">{data.total_jobs}</span>
+                <span className="text-gray-300">|</span>
+                <span className="text-indigo-600 font-medium">{data.role}</span>
+            </div>
+        )}
+
+        {/* Loading */}
+        {loading && (
+            <p className="text-gray-400 text-sm animate-pulse">
+                Loading insights for {selectedRole}…
+            </p>
+        )}
+
+        {/* Grid */}
+        {!loading && data && <DashboardGrid data={data} />}
+
+    </div>
     );
 }

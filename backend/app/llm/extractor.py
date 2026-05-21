@@ -23,7 +23,7 @@ Respond ONLY with valid JSON in this exact format:
 Rules for extraction:
 
 1. "tech_stack" MUST include ONLY concrete technologies:
-   - Programming languages (Python, Java, C++, TypeScript)
+   - Programming languages (such as Python, Java, C++, TypeScript)
    - Frameworks (React, Django, Spring Boot, FastAPI)
    - Libraries (NumPy, Pandas, TensorFlow, PyTorch)
    - Databases (PostgreSQL, MongoDB, Redis)
@@ -73,7 +73,7 @@ async def extract_job_insights(description: str):
             print("LLM returned empty content:", response)
             return None
 
-        # Parse JSON safely
+        # Parse and return JSON safely
         try:
             return json.loads(content)
         except Exception:

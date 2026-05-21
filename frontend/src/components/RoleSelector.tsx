@@ -14,6 +14,7 @@ const PRESET_ROLES = [
     "Frontend Engineer",
     "DevOps Engineer",
     "Full Stack Engineer",
+    "AI Engineer"
 ];
 
 export default function RoleSelector({ selectedRole, onRoleChange }: Props) {

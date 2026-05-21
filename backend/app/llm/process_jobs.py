@@ -13,7 +13,6 @@ from embeddings.embedder import embed_job
 #Add pipeline to update database
 
 async def process_unprocessed_jobs(db: AsyncSession):
-
     #Recieves raw jobs that are unprocessed
     result = await db.execute(
          select(models.JobPosting).where(
