@@ -6,6 +6,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.routes import jobs
 from dotenv import load_dotenv
 
+
+
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
@@ -21,6 +23,7 @@ app.include_router(similar_router, prefix="/api")  #Register the similar router 
 
 app.include_router(jobs.router)
 app.include_router(insights_router, prefix="/api")
+
 
 @app.get("/health")
 def health():
