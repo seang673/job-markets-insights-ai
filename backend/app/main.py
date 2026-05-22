@@ -21,9 +21,8 @@ load_dotenv()
 app.include_router(scrape_router, prefix="/api")  #Register the scrape router with a prefix
 app.include_router(similar_router, prefix="/api")  #Register the similar router with a prefix
 
-app.include_router(jobs.router)
 app.include_router(insights_router, prefix="/api")
-
+app.include_router(jobs.router)
 
 @app.get("/health")
 def health():

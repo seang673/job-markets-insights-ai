@@ -22,26 +22,29 @@ Respond ONLY with valid JSON in this exact format:
 
 Rules for extraction:
 
-1. "tech_stack" MUST include ONLY concrete technologies:
+1. "tech_stack" MUST include ONLY concrete technologies like:
    - Programming languages (such as Python, Java, C++, TypeScript)
-   - Frameworks (React, Django, Spring Boot, FastAPI)
-   - Libraries (NumPy, Pandas, TensorFlow, PyTorch)
-   - Databases (PostgreSQL, MongoDB, Redis)
-   - Cloud platforms (AWS, Azure, GCP)
-   - DevOps tools (Docker, Kubernetes, Terraform, Jenkins)
-   - Other specific tools (Git, Linux, Kafka, Spark)
+   - Frameworks (such as React, Django, Spring Boot, FastAPI)
+   - Libraries (such as NumPy, Pandas, TensorFlow, PyTorch)
+   - Databases (such as PostgreSQL, MongoDB, Redis)
+   - Cloud platforms (such as AWS, Azure, GCP)
+   - DevOps tools (such as Docker, Kubernetes, Terraform, Jenkins)
+   - Other specific tools (such as Git, Linux, Kafka, Spark)
 
    DO NOT include soft skills, general abilities, or abstract concepts.
+   For each word, the first letter should be uppercase, and the rest of the letters in the word should be lowercase.
    If no technologies are mentioned, return an empty array.
 
 2. "skills" should include broader competencies and abilities mentioned in the job description, such as:
-   - Soft skills (communication, teamwork, leadership)
+   - Soft skills (such as communication, teamwork, leadership)
    - General abilities
-   - Methodologies (Agile, Scrum, CI/CD)
-   - Domain knowledge (machine learning, data analysis)
+   - Methodologies (such as Agile, Scrum, CI/CD)
+   - Domain knowledge (such as machine learning, data analysis)
    - Certifications (if mentioned)
 
    DO NOT include programming languages, frameworks, tools, or cloud platforms.
+   For anything related to Agile or Scrum, just list "Agile" or "Scrum" without elaboration.
+   For each word, the first letter should be uppercase, and the rest of the letters in the word should be lowercase.
    If none are mentioned, return an empty array.
 
 3. "seniority" must be one of:

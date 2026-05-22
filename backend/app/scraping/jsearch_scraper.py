@@ -17,7 +17,7 @@ async def fetch_job_details(job_id: str):
         resp = await client.get(
             url,
             headers={"User-Agent": "Mozilla/5.0"},
-            timeout=30
+            timeout=60
         )
 
     text = resp.text

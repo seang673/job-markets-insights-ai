@@ -3,6 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db import crud, models, schemas
 from app.db.database import async_get_db
+from sqlalchemy import delete
 
 router = APIRouter(prefix="/api/jobs", tags=["Jobs"])
 
@@ -35,3 +36,15 @@ async def read_job(
     if not job:
         raise HTTPException(status_code=404, detail="Job posting not found")
     return job
+
+# Delete job postings by role endpoint
+@router.delete("")
+async def delete_jobs(role: str, db: AsyncSession = Depends(async_get_db)):
+    stmt = delete(models.JobPosting).where(models.JobPosting.role == role)
+    result = await db.execute(stmt)
+    await db.commit()
+
+    deleted_count = result.rowcount or 0
+
+    return {"deleted": deleted_count, "role": role}
+
