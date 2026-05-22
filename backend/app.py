@@ -5,11 +5,12 @@ import plotly.express as px
 API = "http://localhost:8000"
 
 def load_insights(role):
-    res = requests.get(f"{API}/insights/overview?role={role}").json()
+    res = requests.get(f"{API}/api/insights/overview?role={role}").json()
+    print("Insights Overview:", res)  # Debugging statement
 
     # Build charts
     skills_fig = px.bar(
-        res["skills"],
+        res["top_skills"],
         x="count",
         y="name",
         orientation="h",
@@ -17,7 +18,7 @@ def load_insights(role):
     )
 
     tech_fig = px.bar(
-        res["tech_stack"],
+        res["top_tech_stack"],
         x="count",
         y="name",
         orientation="h",
@@ -25,7 +26,7 @@ def load_insights(role):
     )
 
     seniority_fig = px.pie(
-        res["seniority"],
+        res["seniority_distribution"],
         names="level",
         values="count",
         title="Seniority Distribution"
@@ -37,7 +38,7 @@ def load_insights(role):
 
 def scrape_and_refresh(role):
     # Trigger scraping
-    requests.post(f"{API}/scrape?role={role}")
+    requests.post(f"{API}/api/scrape?role={role}")
 
     # After scraping, fetch updated insights
     return load_insights(role)
