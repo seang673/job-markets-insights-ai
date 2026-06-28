@@ -45,6 +45,7 @@ Rules for extraction:
    DO NOT include programming languages, frameworks, tools, or cloud platforms.
    For anything related to Agile or Scrum, just list "Agile" or "Scrum" without elaboration.
    For each word, the first letter should be uppercase, and the rest of the letters in the word should be lowercase.
+   Only include letters and spaces within the JSON response, don't add symbols like '-', ':', or ';'
    If none are mentioned, return an empty array.
 
 3. "seniority" must be one of:

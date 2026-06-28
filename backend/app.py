@@ -4,6 +4,10 @@ import plotly.express as px
 
 API = "http://localhost:8000"
 
+# Special dropdown option that aggregates insights across every saved role.
+# Sending no `role` param makes the backend skip its WHERE filter.
+ALL_ROLES = "All Roles"
+
 # ---- UI styling -------------------------------------------------------------
 
 # A richer theme than the default: indigo accents, slate neutrals, and a
@@ -69,13 +73,20 @@ def _style_fig(fig):
 
 #Loading and displaying insights for job
 def load_insights(role):
-    res = requests.get(f"{API}/api/insights/overview?role={role}").json()
+    # "All Roles" => omit the role filter so the backend aggregates everything.
+    if role and role != ALL_ROLES:
+        url = f"{API}/api/insights/overview?role={role}"
+    else:
+        url = f"{API}/api/insights/overview"
+
+    res = requests.get(url).json()
     if (
         "top_skills" not in res
         or not res["top_skills"]
         or res.get("total_jobs", 0) == 0
     ):
-        msg = f"**No job data found for '{role}'.**\nTry scraping first."
+        scope = "any role" if role == ALL_ROLES else f"'{role}'"
+        msg = f"**No job data found for {scope}.**\nTry scraping first."
         empty_fig = px.scatter()  # blank placeholder chart
         return msg, empty_fig, empty_fig, empty_fig
 
@@ -106,12 +117,32 @@ def load_insights(role):
         color_discrete_sequence=["#ef4444", "#f59e0b", "#22c55e", "#0ea5e9", "#8b5cf6", "#ec4899"]
     ))
 
-    summary = f"**Total Number of {res['role']} Jobs:** {res['total_jobs']}  \n**Role:** {res['role']}"
+    label = ALL_ROLES if role == ALL_ROLES else res["role"]
+    summary = f"**Total Number of {label} Jobs:** {res['total_jobs']}  \n**Role:** {label}"
 
     return summary, skills_fig, tech_fig, seniority_fig
 
+# Load insights and toggle the action buttons. Scraping targets a single role,
+# so it's disabled in the "All Roles" view; delete stays enabled there and
+# clears every posting in the database.
+def load_view(role):
+    summary, skills_fig, tech_fig, seniority_fig = load_insights(role)
+    scrape_enabled = role != ALL_ROLES
+    return (
+        summary,
+        skills_fig,
+        tech_fig,
+        seniority_fig,
+        gr.update(interactive=scrape_enabled),
+        gr.update(interactive=True),
+    )
+
 #Scraping jobs and refreshing insights
 def scrape_and_refresh(role):
+    # Scraping/deleting target a single role; "All Roles" is view-only.
+    if role == ALL_ROLES:
+        gr.Warning("Select a specific role to scrape jobs.")
+        return
     yield (
           # button
         None, None, None, None,  # placeholders for charts/summary
@@ -139,8 +170,9 @@ def scrape_and_refresh(role):
 
     return (summary, skills_fig, tech_fig, seniority_fig, gr.update(value="Scrape More Jobs", interactive=True))
 
-#Delete jobs for role
+#Delete jobs for role ("All Roles" deletes every posting in the database)
 def delete_jobs(role):
+    is_all = role == ALL_ROLES
     try:
         yield (
           # button
@@ -148,10 +180,14 @@ def delete_jobs(role):
             gr.update(value="Scrape More Jobs", interactive=False),
             gr.update(value="Deleting...", variant="stop", interactive=False)
         )
-        resp = requests.delete(f"{API}/api/jobs", params={"role": role}).json()
+        # Omit the role param when deleting across all roles so the backend
+        # drops every posting rather than filtering by role.
+        params = {} if is_all else {"role": role}
+        resp = requests.delete(f"{API}/api/jobs", params=params).json()
         deleted = resp.get("deleted", 0)
 
-        gr.Info(f"Deleted {deleted} jobs for role: {role}")
+        scope = "all roles" if is_all else f"role: {role}"
+        gr.Info(f"Deleted {deleted} jobs for {scope}")
         summary, skills_fig, tech_fig, seniority_fig = load_insights(role)
 
         yield(
@@ -159,7 +195,8 @@ def delete_jobs(role):
             skills_fig,
             tech_fig,
             seniority_fig,
-            gr.update(value="Scrape More Jobs", interactive=True),
+            # Scrape stays disabled while viewing "All Roles".
+            gr.update(value="Scrape More Jobs", interactive=not is_all),
             gr.update(value="Delete Scraped Jobs", variant="stop", interactive=True)
         )
 
@@ -180,7 +217,8 @@ with gr.Blocks(theme=THEME, css=CSS, title="Job Market Insights") as demo:
 
     with gr.Row(elem_id="action-row"):
         role = gr.Dropdown(
-            ["Software Engineer",
+            [ALL_ROLES,
+             "Software Engineer",
              "Data Scientist",
              "Machine Learning Engineer",
              "Quality Assurance Engineer",
@@ -191,7 +229,7 @@ with gr.Blocks(theme=THEME, css=CSS, title="Job Market Insights") as demo:
              "AI Engineer"
             ],
             label="Select Role",
-            value="Software Engineer",
+            value=ALL_ROLES,
             scale=3,
         )
         scrape_btn = gr.Button(
@@ -213,16 +251,16 @@ with gr.Blocks(theme=THEME, css=CSS, title="Job Market Insights") as demo:
 
     #Load insights on initial page load
     demo.load(
-        load_insights,
+        load_view,
         inputs=[role],
-        outputs=[summary, skills_chart, tech_chart, seniority_chart]
+        outputs=[summary, skills_chart, tech_chart, seniority_chart, scrape_btn, delete_btn]
     )
 
     #Auto-load insights on role change
     role.change(
-        load_insights,
+        load_view,
         inputs=[role],
-        outputs=[summary, skills_chart, tech_chart, seniority_chart]
+        outputs=[summary, skills_chart, tech_chart, seniority_chart, scrape_btn, delete_btn]
     )
 
     scrape_btn.click(
