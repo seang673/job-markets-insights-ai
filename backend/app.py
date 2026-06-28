@@ -54,7 +54,7 @@ def scrape_and_refresh(role):
         gr.update(value="Scraping...", interactive=False),
         gr.update(value="Delete All Scraped Jobs for This Role", variant="stop", interactive=False)
     )
-    gr.Info(f"Scraping more jobs for {role}, this usually takes around 1 minute...")
+    gr.Info(f"Scraping more jobs for {role} role, this usually takes around 1 minute...")
 
     # Trigger scraping
     requests.post(f"{API}/api/scrape?role={role}")
@@ -78,21 +78,37 @@ def scrape_and_refresh(role):
 #Delete jobs for role
 def delete_jobs(role):
     try:
+        yield (
+          # button
+            None, None, None, None,  # placeholders for charts/summary
+            gr.update(value="Scrape More Jobs", interactive=False),
+            gr.update(value="Deleting...", variant="stop", interactive=False)
+        )
         resp = requests.delete(f"{API}/api/jobs", params={"role": role}).json()
         deleted = resp.get("deleted", 0)
 
         gr.Info(f"Deleted {deleted} jobs for role: {role}")
+        summary, skills_fig, tech_fig, seniority_fig = load_insights(role)
+
+        yield(
+            summary,
+            skills_fig,
+            tech_fig,
+            seniority_fig,
+            gr.update(value="Scrape More Jobs", interactive=True),
+            gr.update(value="Delete All Scraped Jobs for This Role", variant="stop", interactive=True)
+        )
 
         # After deletion, refresh insights (will show empty charts)
-        return load_insights(role)
+        summary, skills_fig, tech_fig, seniority_fig, gr.update(value="Scrape More Jobs", interactive=True), gr.update(value="Delete All Scraped Jobs for This Role", variant="stop", interactive=True)
 
     except Exception as e:
         gr.Error(f"Failed to delete jobs: {e}")
-        return None, None, None, None
+        return None, None, None, None, gr.update(value="Scrape More Jobs", interactive=True),  gr.update(value="Delete All Scraped Jobs for This Role", variant="stop", interactive=True)
 
 
 with gr.Blocks() as demo:
-    gr.Markdown("# Job Market Insights")
+    gr.Markdown("# Job Market Insights In Technology")
 
     with gr.Row():
         role = gr.Dropdown(
@@ -143,7 +159,7 @@ with gr.Blocks() as demo:
     delete_btn.click(
         delete_jobs,
         inputs=[role],
-        outputs=[summary, skills_chart, tech_chart, seniority_chart]
+        outputs=[summary, skills_chart, tech_chart, seniority_chart, scrape_btn, delete_btn]
     )
 
 demo.launch()
