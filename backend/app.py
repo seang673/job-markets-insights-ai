@@ -4,6 +4,69 @@ import plotly.express as px
 
 API = "http://localhost:8000"
 
+# ---- UI styling -------------------------------------------------------------
+
+# A richer theme than the default: indigo accents, slate neutrals, and a
+# slightly larger, bolder type scale so headings and labels stand out.
+THEME = gr.themes.Soft(
+    primary_hue=gr.themes.colors.amber,
+    secondary_hue=gr.themes.colors.pink,
+    neutral_hue=gr.themes.colors.slate,
+    font=[gr.themes.GoogleFont("Inter"), "ui-sans-serif", "system-ui", "sans-serif"],
+).set(
+    body_background_fill="*neutral_50",
+    block_background_fill="white",
+    block_shadow="0 1px 3px rgba(0,0,0,0.08)",
+    block_radius="14px",
+)
+
+CSS = """
+/* Soft gradient backdrop instead of flat white */
+.gradio-container {
+    background: linear-gradient(160deg, #fefce8 0%, #f0f9ff 50%, #fdf2f8 100%) !important;
+}
+
+/* App heading */
+#app-title h1 {
+    font-size: 2.3rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    background: linear-gradient(90deg, #f59e0b, #ec4899);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 0.1rem;
+}
+#app-subtitle p {
+    color: #64748b;
+    font-size: 1.02rem;
+    margin-top: 0;
+}
+
+/* Make the action buttons compact and natural-sized rather than full width */
+#action-row { align-items: flex-end; gap: 10px; }
+#scrape-btn, #delete-btn {
+    max-width: 220px;
+    font-weight: 600;
+    border-radius: 10px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+}
+
+/* Stronger summary text */
+#summary-box { font-size: 1.05rem; }
+"""
+
+# Give the Plotly charts a transparent backdrop so they blend with the cards.
+def _style_fig(fig):
+    fig.update_layout(
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        font=dict(family="Inter, sans-serif", color="#334155"),
+        title_font=dict(size=18, color="#1e293b"),
+        margin=dict(l=10, r=10, t=50, b=10),
+    )
+    return fig
+
 #Loading and displaying insights for job
 def load_insights(role):
     res = requests.get(f"{API}/api/insights/overview?role={role}").json()
@@ -17,30 +80,31 @@ def load_insights(role):
         return msg, empty_fig, empty_fig, empty_fig
 
     # Build charts
-    skills_fig = px.bar(
+    skills_fig = _style_fig(px.bar(
         res["top_skills"],
         x="count",
         y="name",
         orientation="h",
         title="Top Skills",
-        color_discrete_sequence=["#636EFA"]
-    )
+        color_discrete_sequence=["#22c55e"]
+    ))
 
-    tech_fig = px.bar(
+    tech_fig = _style_fig(px.bar(
         res["top_tech_stack"],
         x="count",
         y="name",
         orientation="h",
         title="Top Tech Stack",
-        color_discrete_sequence=["#EF553B"]
-    )
+        color_discrete_sequence=["#f59e0b"]
+    ))
 
-    seniority_fig = px.pie(
+    seniority_fig = _style_fig(px.pie(
         res["seniority_distribution"],
         names="level",
         values="count",
-        title="Seniority Distribution"
-    )
+        title="Seniority Distribution",
+        color_discrete_sequence=["#ef4444", "#f59e0b", "#22c55e", "#0ea5e9", "#8b5cf6", "#ec4899"]
+    ))
 
     summary = f"**Total Number of {res['role']} Jobs:** {res['total_jobs']}  \n**Role:** {res['role']}"
 
@@ -52,7 +116,7 @@ def scrape_and_refresh(role):
           # button
         None, None, None, None,  # placeholders for charts/summary
         gr.update(value="Scraping...", interactive=False),
-        gr.update(value="Delete All Scraped Jobs for This Role", variant="stop", interactive=False)
+        gr.update(value="Delete Scraped Jobs", variant="stop", interactive=False)
     )
     gr.Info(f"Scraping more jobs for {role} role, this usually takes around 1 minute...")
 
@@ -70,7 +134,7 @@ def scrape_and_refresh(role):
         tech_fig,
         seniority_fig,
         gr.update(value="Scrape More Jobs", interactive=True),
-        gr.update(value="Delete All Scraped Jobs for This Role", variant="stop", interactive=True)
+        gr.update(value="Delete Scraped Jobs", variant="stop", interactive=True)
     )
 
     return (summary, skills_fig, tech_fig, seniority_fig, gr.update(value="Scrape More Jobs", interactive=True))
@@ -96,21 +160,25 @@ def delete_jobs(role):
             tech_fig,
             seniority_fig,
             gr.update(value="Scrape More Jobs", interactive=True),
-            gr.update(value="Delete All Scraped Jobs for This Role", variant="stop", interactive=True)
+            gr.update(value="Delete Scraped Jobs", variant="stop", interactive=True)
         )
 
         # After deletion, refresh insights (will show empty charts)
-        summary, skills_fig, tech_fig, seniority_fig, gr.update(value="Scrape More Jobs", interactive=True), gr.update(value="Delete All Scraped Jobs for This Role", variant="stop", interactive=True)
+        summary, skills_fig, tech_fig, seniority_fig, gr.update(value="Scrape More Jobs", interactive=True), gr.update(value="Delete Scraped Jobs", variant="stop", interactive=True)
 
     except Exception as e:
         gr.Error(f"Failed to delete jobs: {e}")
-        return None, None, None, None, gr.update(value="Scrape More Jobs", interactive=True),  gr.update(value="Delete All Scraped Jobs for This Role", variant="stop", interactive=True)
+        return None, None, None, None, gr.update(value="Scrape More Jobs", interactive=True),  gr.update(value="Delete Scraped Jobs", variant="stop", interactive=True)
 
 
-with gr.Blocks() as demo:
-    gr.Markdown("# Job Market Insights In Technology")
+with gr.Blocks(theme=THEME, css=CSS, title="Job Market Insights") as demo:
+    gr.Markdown("# Job Market Insights In Technology", elem_id="app-title")
+    gr.Markdown(
+        "Explore in-demand skills, tech stacks, and seniority trends across tech roles.",
+        elem_id="app-subtitle",
+    )
 
-    with gr.Row():
+    with gr.Row(elem_id="action-row"):
         role = gr.Dropdown(
             ["Software Engineer",
              "Data Scientist",
@@ -123,12 +191,19 @@ with gr.Blocks() as demo:
              "AI Engineer"
             ],
             label="Select Role",
-            value="Software Engineer"
+            value="Software Engineer",
+            scale=3,
         )
-        scrape_btn = gr.Button(f"Scrape More Jobs")
-        delete_btn = gr.Button("Delete All Scraped Jobs for This Role", variant="stop")
+        scrape_btn = gr.Button(
+            "Scrape More Jobs", variant="primary", size="sm",
+            scale=1, min_width=160, elem_id="scrape-btn",
+        )
+        delete_btn = gr.Button(
+            "Delete Scraped Jobs", variant="stop", size="sm",
+            scale=1, min_width=160, elem_id="delete-btn",
+        )
 
-    summary = gr.Markdown()
+    summary = gr.Markdown(elem_id="summary-box")
 
     with gr.Row():
         skills_chart = gr.Plot()
