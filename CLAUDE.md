@@ -55,7 +55,14 @@ synchronously end-to-end:
 `GET /api/insights/overview?role=...` aggregates the enriched fields in Python
 (`collections.Counter`) — `skills_extracted`/`tech_stack` are stored as
 comma-joined strings and split back apart at query time. The Gradio frontend
-renders these as Plotly charts.
+renders these as Plotly charts. **Omitting `role` aggregates across every
+posting**; the Gradio dropdown's default "All Roles" option (`ALL_ROLES` in
+`app.py`) relies on this by calling the endpoint with no `role` param.
+
+`DELETE /api/jobs` deletes postings for a given `role`, or — when `role` is
+omitted — **every** posting in the table. The Gradio "All Roles" view keeps the
+delete button enabled (delete-all) but disables scraping, which is inherently
+role-specific. Note: delete only touches the Postgres table, not ChromaDB.
 
 Similarity search (`GET /api/similar/{job_id}`) re-embeds the stored job and
 queries ChromaDB by cosine distance.
@@ -87,3 +94,7 @@ the backend will work.
   a removed React frontend; the live UI is Gradio.
 - `process_jobs.py` marks jobs with no description as "processed" by setting all
   enrichment fields to empty strings, so they won't be retried.
+- **Compiled bytecode and the vector store are committed** (`__pycache__/*.pyc`,
+  `backend/vector_store/chroma.sqlite3` and its `*.bin` files), so they show up
+  as modified on nearly every run. They are not in `.gitignore`; avoid bundling
+  these incidental changes into unrelated commits.
