@@ -9,12 +9,20 @@ from app.db import models
 router = APIRouter()
 
 @router.get("/insights/overview")
-async def get_insights_overview(role: Optional[str] = None, db: AsyncSession = Depends(async_get_db)):
-    # Build base query
+async def get_insights_overview(
+    role: Optional[str] = None,
+    seniority: Optional[str] = None,
+    db: AsyncSession = Depends(async_get_db),
+):
+    # Build base query. Both filters are optional and compose: omitting `role`
+    # aggregates across roles, omitting `seniority` aggregates across levels.
     query = select(models.JobPosting)
 
     if role:
         query = query.where(models.JobPosting.role == role)
+
+    if seniority:
+        query = query.where(models.JobPosting.seniority == seniority)
 
     # Execute async query
     result = await db.execute(query)
@@ -58,5 +66,6 @@ async def get_insights_overview(role: Optional[str] = None, db: AsyncSession = D
         "top_skills": top_skills,
         "top_tech_stack": top_tech_stack,
         "seniority_distribution": seniority_distribution,
-        "role": role or "all"
+        "role": role or "all",
+        "seniority": seniority or "all",
     }

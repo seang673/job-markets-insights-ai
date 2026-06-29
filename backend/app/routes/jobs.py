@@ -39,16 +39,28 @@ async def read_job(
         raise HTTPException(status_code=404, detail="Job posting not found")
     return job
 
-# Delete job postings by role endpoint (omit `role` to delete every posting)
+# Delete job postings, optionally narrowed by role and/or seniority.
+# Both filters are optional and compose: omit both to delete every posting,
+# omit `seniority` to delete every level for a role, etc.
 @router.delete("")
-async def delete_jobs(role: Optional[str] = None, db: AsyncSession = Depends(async_get_db)):
+async def delete_jobs(
+    role: Optional[str] = None,
+    seniority: Optional[str] = None,
+    db: AsyncSession = Depends(async_get_db),
+):
     stmt = delete(models.JobPosting)
     if role:
         stmt = stmt.where(models.JobPosting.role == role)
+    if seniority:
+        stmt = stmt.where(models.JobPosting.seniority == seniority)
     result = await db.execute(stmt)
     await db.commit()
 
     deleted_count = result.rowcount or 0
 
-    return {"deleted": deleted_count, "role": role or "all"}
+    return {
+        "deleted": deleted_count,
+        "role": role or "all",
+        "seniority": seniority or "all",
+    }
 
