@@ -31,10 +31,15 @@ script, not part of CI. Several modules have `if __name__ == "__main__"` blocks
 for manual runs, but some call their entrypoints with no args and will error —
 they are not maintained entrypoints.
 
-## Required environment (`backend/.env`)
+## Required environment (`.env` at repo root)
+
+`load_dotenv()` is called from the `backend/` cwd and walks up to the repo-root
+`.env` (which is gitignored).
 
 - `OPENAI_API_KEY` — used for both LLM extraction and embeddings.
 - `JSEARCH_API_KEY` — RapidAPI key for the JSearch job-search API.
+- `DATABASE_URL` — async SQLAlchemy URL, e.g.
+  `postgresql+asyncpg://postgres:<password>@localhost:5432/job_insights`.
 
 ## Architecture & data flow
 
@@ -70,8 +75,9 @@ queries ChromaDB by cosine distance.
 ### Storage
 
 - **PostgreSQL** holds the relational `job_postings` table (`app/db/models.py`).
-  Access is fully async via SQLAlchemy `asyncpg`. The connection URL and
-  credentials are **hardcoded** in `app/db/database.py` (not env-driven).
+  Access is fully async via SQLAlchemy `asyncpg`. The connection string is read
+  from the `DATABASE_URL` environment variable (`.env`); `app/db/database.py`
+  raises at import if it is unset.
 - **ChromaDB** (`backend/vector_store/`, committed to the repo) is a persistent
   local vector store, collection `jobs`, cosine space. Wrapped by
   `embeddings/vector_store.py`.
