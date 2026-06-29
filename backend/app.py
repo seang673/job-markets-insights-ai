@@ -1,3 +1,5 @@
+import statistics
+
 import gradio as gr
 import requests
 import plotly.express as px
@@ -141,17 +143,45 @@ def load_insights(role, seniority=ALL_SENIORITIES):
     salary_data = res.get("salary_data", [])
     salary_count = len(salary_data)
     if salary_data:
-        group_label = res.get("salary_group_by", "group").capitalize()
+        group_by = res.get("salary_group_by", "group")
+        group_label = group_by.capitalize()
+
+        # X-axis order: seniority follows the career ladder; roles sort by
+        # median pay (highest first) so the comparison reads left-to-right.
+        by_group = {}
+        for row in salary_data:
+            by_group.setdefault(row["group"], []).append(row["salary"])
+        if group_by == "seniority":
+            ladder = [s for s in SENIORITY_LEVELS if s != ALL_SENIORITIES] + ["Unknown"]
+            order = [g for g in ladder if g in by_group]
+        else:
+            order = sorted(by_group, key=lambda g: statistics.median(by_group[g]), reverse=True)
+
         salary_fig = _style_fig(px.box(
             salary_data,
             x="group",
             y="salary",
-            points="outliers",
-            title=f"Salary Distribution by {group_label} (annualized USD)",
             color="group",
+            points="all",  # overlay every posting so sparse groups still read
+            category_orders={"group": order},
+            title=f"Salary Distribution by {group_label} (annualized USD)",
             color_discrete_sequence=px.colors.qualitative.Set2,
         ))
-        salary_fig.update_layout(showlegend=False, xaxis_title=None, yaxis_title="Annual salary (USD)")
+        # Show the mean line, spread overlaid points, and format pay as currency.
+        salary_fig.update_traces(
+            boxmean=True,
+            jitter=0.4,
+            pointpos=0,
+            marker=dict(size=7, opacity=0.7),
+            hovertemplate="%{x}<br>$%{y:,.0f}<extra></extra>",
+        )
+        salary_fig.update_layout(
+            showlegend=False,
+            boxgap=0.4,
+            xaxis_title=None,
+            yaxis_title="Annual salary (USD)",
+            yaxis=dict(tickprefix="$", tickformat=",.0f"),
+        )
     else:
         salary_fig = px.scatter()  # blank placeholder when no salary reported
 
@@ -162,7 +192,7 @@ def load_insights(role, seniority=ALL_SENIORITIES):
         f"**Role:** {label}  \n"
         f"**Seniority:** {sen_label}  \n"
         f"**Postings with salary data:** {salary_count}"
-        + ("  _(salary is sparsely reported — scrape more to populate the box-plot)_" if salary_count == 0 else "")
+        + ("  _(scrape more to populate the box-plot)_" if salary_count == 0 else "")
     )
 
     return summary, skills_fig, tech_fig, seniority_fig, salary_fig
