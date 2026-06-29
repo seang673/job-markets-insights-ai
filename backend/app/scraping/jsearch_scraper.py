@@ -103,7 +103,13 @@ async def scrape_jsearch(query="software engineer", limit=10):
             "description": job.get("job_description"),
             "date_posted": job.get("job_posted_at_datetime_utc"),
             "url": job.get("job_apply_link") or job.get("job_apply_is_direct"),
-            "source": "jsearch"
+            "source": "jsearch",
+            # Salary is reported on only a minority of postings, so these are
+            # frequently None. Stored raw; annualized/normalized at query time.
+            "job_min_salary": job.get("job_min_salary"),
+            "job_max_salary": job.get("job_max_salary"),
+            "salary_currency": job.get("job_salary_currency"),
+            "salary_period": job.get("job_salary_period"),
         })
 
     return jobs

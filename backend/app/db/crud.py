@@ -14,7 +14,11 @@ async def create_job_posting(db: AsyncSession, job: schemas.JobPostingCreate):
         url=job.url,
         source=job.source,
         date_posted=job.date_posted,
-        role=job.role
+        role=job.role,
+        job_min_salary=job.job_min_salary,
+        job_max_salary=job.job_max_salary,
+        salary_currency=job.salary_currency,
+        salary_period=job.salary_period,
     )
     db.add(db_job)
     await db.commit()

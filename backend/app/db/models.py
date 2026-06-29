@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime
+from sqlalchemy import Column, Integer, String, Text, DateTime, Float
 from sqlalchemy.sql import func
 from .database import Base
 
@@ -19,6 +19,13 @@ class JobPosting(Base):
 
     date_posted = Column(String(100), nullable=True)
     date_scraped = Column(DateTime(timezone=True), server_default=func.now())
+
+    # Salary as reported by JSearch (raw min/max range, frequently null).
+    # Annualization + currency normalization happen at query time.
+    job_min_salary = Column(Float, nullable=True)
+    job_max_salary = Column(Float, nullable=True)
+    salary_currency = Column(String, nullable=True)
+    salary_period = Column(String, nullable=True)
 
     # LLM‑ready fields (filled later)
     skills_extracted = Column(Text, nullable=True)

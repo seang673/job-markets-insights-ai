@@ -13,6 +13,10 @@ class JobPostingBase(BaseModel):
     source: Optional[str] = "indeed"
     date_posted: Optional[str] = None
     role: Optional[str] = None
+    job_min_salary: Optional[float] = None
+    job_max_salary: Optional[float] = None
+    salary_currency: Optional[str] = None
+    salary_period: Optional[str] = None
 
 class JobPostingCreate(JobPostingBase):
     pass

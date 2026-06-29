@@ -105,7 +105,7 @@ def load_insights(role, seniority=ALL_SENIORITIES):
         sen_scope = "" if seniority == ALL_SENIORITIES else f" at '{seniority}' level"
         msg = f"**No job data found for {role_scope}{sen_scope}.**\nTry scraping some jobs first."
         empty_fig = px.scatter()  # blank placeholder chart
-        return msg, empty_fig, empty_fig, empty_fig
+        return msg, empty_fig, empty_fig, empty_fig, empty_fig
 
     # Build charts
     skills_fig = _style_fig(px.bar(
@@ -134,27 +134,51 @@ def load_insights(role, seniority=ALL_SENIORITIES):
         color_discrete_sequence=["#ef4444", "#f59e0b", "#22c55e", "#0ea5e9", "#8b5cf6", "#ec4899"]
     ))
 
+    # Salary box-plot. Grouped adaptively by the backend (per-role in the
+    # "All Roles" view, per-seniority otherwise). JSearch reports salary on
+    # only a minority of postings, so this can be empty even when other charts
+    # are populated — fall back to a blank placeholder in that case.
+    salary_data = res.get("salary_data", [])
+    salary_count = len(salary_data)
+    if salary_data:
+        group_label = res.get("salary_group_by", "group").capitalize()
+        salary_fig = _style_fig(px.box(
+            salary_data,
+            x="group",
+            y="salary",
+            points="outliers",
+            title=f"Salary Distribution by {group_label} (annualized USD)",
+            color="group",
+            color_discrete_sequence=px.colors.qualitative.Set2,
+        ))
+        salary_fig.update_layout(showlegend=False, xaxis_title=None, yaxis_title="Annual salary (USD)")
+    else:
+        salary_fig = px.scatter()  # blank placeholder when no salary reported
+
     label = ALL_ROLES if role == ALL_ROLES else res["role"]
     sen_label = ALL_SENIORITIES if seniority == ALL_SENIORITIES else seniority
     summary = (
         f"**Total Number of {label} Jobs:** {res['total_jobs']}  \n"
         f"**Role:** {label}  \n"
-        f"**Seniority:** {sen_label}"
+        f"**Seniority:** {sen_label}  \n"
+        f"**Postings with salary data:** {salary_count}"
+        + ("  _(salary is sparsely reported — scrape more to populate the box-plot)_" if salary_count == 0 else "")
     )
 
-    return summary, skills_fig, tech_fig, seniority_fig
+    return summary, skills_fig, tech_fig, seniority_fig, salary_fig
 
 # Load insights and toggle the action buttons. Scraping targets a single role,
 # so it's disabled in the "All Roles" view; delete stays enabled there and
 # clears every posting in the database.
 def load_view(role, seniority):
-    summary, skills_fig, tech_fig, seniority_fig = load_insights(role, seniority)
+    summary, skills_fig, tech_fig, seniority_fig, salary_fig = load_insights(role, seniority)
     scrape_enabled = role != ALL_ROLES
     return (
         summary,
         skills_fig,
         tech_fig,
         seniority_fig,
+        salary_fig,
         gr.update(interactive=scrape_enabled),
         gr.update(interactive=True),
     )
@@ -168,7 +192,7 @@ def scrape_and_refresh(role, seniority):
         return
     yield (
           # button
-        None, None, None, None,  # placeholders for charts/summary
+        None, None, None, None, None,  # placeholders for charts/summary
         gr.update(value="Scraping...", interactive=False),
         gr.update(value="Delete Scraped Jobs", variant="stop", interactive=False)
     )
@@ -180,18 +204,19 @@ def scrape_and_refresh(role, seniority):
     gr.Info("Scraping complete!")
 
     # After scraping, fetch updated insights
-    summary, skills_fig, tech_fig, seniority_fig = load_insights(role, seniority)
+    summary, skills_fig, tech_fig, seniority_fig, salary_fig = load_insights(role, seniority)
 
     yield(
         summary,
         skills_fig,
         tech_fig,
         seniority_fig,
+        salary_fig,
         gr.update(value="Scrape More Jobs", interactive=True),
         gr.update(value="Delete Scraped Jobs", variant="stop", interactive=True)
     )
 
-    return (summary, skills_fig, tech_fig, seniority_fig, gr.update(value="Scrape More Jobs", interactive=True))
+    return (summary, skills_fig, tech_fig, seniority_fig, salary_fig, gr.update(value="Scrape More Jobs", interactive=True))
 
 #Delete jobs, narrowed by the active role and seniority filters. With both set
 #to their "All ..." sentinels this deletes every posting in the database.
@@ -201,7 +226,7 @@ def delete_jobs(role, seniority):
     try:
         yield (
           # button
-            None, None, None, None,  # placeholders for charts/summary
+            None, None, None, None, None,  # placeholders for charts/summary
             gr.update(value="Scrape More Jobs", interactive=False),
             gr.update(value="Deleting...", variant="stop", interactive=False)
         )
@@ -218,24 +243,22 @@ def delete_jobs(role, seniority):
         role_scope = "all roles" if is_all_roles else f"role: {role}"
         sen_scope = "" if is_all_seniorities else f", seniority: {seniority}"
         gr.Info(f"Deleted {deleted} jobs for {role_scope}{sen_scope}")
-        summary, skills_fig, tech_fig, seniority_fig = load_insights(role, seniority)
+        summary, skills_fig, tech_fig, seniority_fig, salary_fig = load_insights(role, seniority)
 
         yield(
             summary,
             skills_fig,
             tech_fig,
             seniority_fig,
+            salary_fig,
             # Scrape stays disabled while viewing "All Roles".
             gr.update(value="Scrape More Jobs", interactive=not is_all_roles),
             gr.update(value="Delete Scraped Jobs", variant="stop", interactive=True)
         )
 
-        # After deletion, refresh insights (will show empty charts)
-        summary, skills_fig, tech_fig, seniority_fig, gr.update(value="Scrape More Jobs", interactive=True), gr.update(value="Delete Scraped Jobs", variant="stop", interactive=True)
-
     except Exception as e:
         gr.Error(f"Failed to delete jobs: {e}")
-        return None, None, None, None, gr.update(value="Scrape More Jobs", interactive=True),  gr.update(value="Delete Scraped Jobs", variant="stop", interactive=True)
+        return None, None, None, None, None, gr.update(value="Scrape More Jobs", interactive=True),  gr.update(value="Delete Scraped Jobs", variant="stop", interactive=True)
 
 
 with gr.Blocks(theme=THEME, css=CSS, title="Job Market Insights") as demo:
@@ -285,37 +308,40 @@ with gr.Blocks(theme=THEME, css=CSS, title="Job Market Insights") as demo:
 
     seniority_chart = gr.Plot()
 
+    # Salary box-plot — full width below the pie since box-plots read better wide.
+    salary_chart = gr.Plot()
+
     #Load insights on initial page load
     demo.load(
         load_view,
         inputs=[role, seniority],
-        outputs=[summary, skills_chart, tech_chart, seniority_chart, scrape_btn, delete_btn]
+        outputs=[summary, skills_chart, tech_chart, seniority_chart, salary_chart, scrape_btn, delete_btn]
     )
 
     #Auto-load insights on role change
     role.change(
         load_view,
         inputs=[role, seniority],
-        outputs=[summary, skills_chart, tech_chart, seniority_chart, scrape_btn, delete_btn]
+        outputs=[summary, skills_chart, tech_chart, seniority_chart, salary_chart, scrape_btn, delete_btn]
     )
 
     #Auto-load insights on seniority change
     seniority.change(
         load_view,
         inputs=[role, seniority],
-        outputs=[summary, skills_chart, tech_chart, seniority_chart, scrape_btn, delete_btn]
+        outputs=[summary, skills_chart, tech_chart, seniority_chart, salary_chart, scrape_btn, delete_btn]
     )
 
     scrape_btn.click(
         scrape_and_refresh,
         inputs=[role, seniority],
-        outputs=[summary, skills_chart, tech_chart, seniority_chart, scrape_btn, delete_btn]
+        outputs=[summary, skills_chart, tech_chart, seniority_chart, salary_chart, scrape_btn, delete_btn]
     )
 
     delete_btn.click(
         delete_jobs,
         inputs=[role, seniority],
-        outputs=[summary, skills_chart, tech_chart, seniority_chart, scrape_btn, delete_btn]
+        outputs=[summary, skills_chart, tech_chart, seniority_chart, salary_chart, scrape_btn, delete_btn]
     )
 
 demo.launch()
