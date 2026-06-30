@@ -57,12 +57,23 @@ synchronously end-to-end:
    `seniority`, `summary`, then generates an embedding (`text-embedding-3-small`)
    and upserts it into ChromaDB.
 
-`GET /api/insights/overview?role=...` aggregates the enriched fields in Python
-(`collections.Counter`) — `skills_extracted`/`tech_stack` are stored as
-comma-joined strings and split back apart at query time. The Gradio frontend
-renders these as Plotly charts. **Omitting `role` aggregates across every
-posting**; the Gradio dropdown's default "All Roles" option (`ALL_ROLES` in
-`app.py`) relies on this by calling the endpoint with no `role` param.
+`GET /api/insights/overview?role=...&seniority=...` aggregates the enriched
+fields in Python (`collections.Counter`) — `skills_extracted`/`tech_stack` are
+stored as comma-joined strings and split back apart at query time. The Gradio
+frontend renders these as Plotly charts. Both query params are optional and
+compose: **omitting `role` aggregates across every posting**, and omitting
+`seniority` aggregates across levels. The Gradio dropdown's default "All Roles"
+option (`ALL_ROLES` in `app.py`) relies on this by calling the endpoint with no
+`role` param; a separate seniority dropdown drives the `seniority` filter.
+
+The same endpoint also returns a salary distribution (`salary_data` +
+`salary_group_by`) for a box-plot. Salary points are derived at query time by
+`_annualized_usd_midpoint` in `app/api/insights.py`: it takes the midpoint of
+JSearch's raw `job_min_salary`/`job_max_salary` range, annualizes it via
+`_PERIOD_FACTORS` (HOUR/DAY/WEEK/MONTH→YEAR), **skips non-USD postings**, and
+drops parses outside `_MIN_ANNUAL`/`_MAX_ANNUAL` sanity bounds. Grouping is
+adaptive: when a single `role` is in view the box-plot groups by seniority,
+otherwise by role.
 
 `DELETE /api/jobs` deletes postings for a given `role`, or — when `role` is
 omitted — **every** posting in the table. The Gradio "All Roles" view keeps the

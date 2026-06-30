@@ -3,6 +3,7 @@ import statistics
 import gradio as gr
 import requests
 import plotly.express as px
+import plotly.graph_objects as go
 
 API = "http://localhost:8000"
 
@@ -87,6 +88,26 @@ def _style_fig(fig):
     )
     return fig
 
+# Empty-state placeholder. A bare px.scatter() renders default axes/gridlines,
+# so an empty chart looks broken; this strips the axes and centers a message in
+# the plot area so blank slots read as intentional.
+def _empty_fig(text="No data yet"):
+    fig = go.Figure()
+    fig.add_annotation(
+        text=text,
+        showarrow=False,
+        xref="paper", yref="paper", x=0.5, y=0.5,
+        font=dict(family="Inter, sans-serif", size=15, color="#94a3b8"),
+    )
+    fig.update_layout(
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        xaxis=dict(visible=False),
+        yaxis=dict(visible=False),
+        margin=dict(l=10, r=10, t=50, b=10),
+    )
+    return fig
+
 #Loading and displaying insights for job
 def load_insights(role, seniority=ALL_SENIORITIES):
     # Each sentinel ("All Roles"/"All Seniorities") => omit that param so the
@@ -106,8 +127,14 @@ def load_insights(role, seniority=ALL_SENIORITIES):
         role_scope = "any role" if role == ALL_ROLES else f"'{role}'"
         sen_scope = "" if seniority == ALL_SENIORITIES else f" at '{seniority}' level"
         msg = f"**No job data found for {role_scope}{sen_scope}.**\nTry scraping some jobs first."
-        empty_fig = px.scatter()  # blank placeholder chart
-        return msg, empty_fig, empty_fig, empty_fig, empty_fig
+        hint = "Scrape some jobs to populate this chart"
+        return (
+            msg,
+            _empty_fig(f"No skills data yet — {hint.lower()}"),
+            _empty_fig(f"No tech-stack data yet — {hint.lower()}"),
+            _empty_fig(f"No seniority data yet — {hint.lower()}"),
+            _empty_fig(f"No salary data yet — {hint.lower()}"),
+        )
 
     # Build charts
     skills_fig = _style_fig(px.bar(
@@ -183,7 +210,9 @@ def load_insights(role, seniority=ALL_SENIORITIES):
             yaxis=dict(tickprefix="$", tickformat=",.0f"),
         )
     else:
-        salary_fig = px.scatter()  # blank placeholder when no salary reported
+        # JSearch reports salary on only a minority of postings, so this can be
+        # empty even when the other charts are populated.
+        salary_fig = _empty_fig("No salary data reported — scrape more jobs to populate the box-plot")
 
     label = ALL_ROLES if role == ALL_ROLES else res["role"]
     sen_label = ALL_SENIORITIES if seniority == ALL_SENIORITIES else seniority
